@@ -1,0 +1,9 @@
+flask
+flask-sqlalchemy
+werkzeug
+requests
+pypdf
+chromadb
+jinja2
+fpdf2
+pytest
