@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl"><h1 class="text-3xl font-bold">Create new audit</h1><p class="mt-2 text-slate-500">Choose one project source and the checks you want to run.</p>
+<form method="post" enctype="multipart/form-data" class="mt-8 space-y-6">
+  <div class="rounded-xl border border-[#E2E8F0] bg-white p-6 space-y-4"><input name="project_name" placeholder="Project name" class="w-full rounded-lg border p-3" required><input name="target_url" placeholder="AI endpoint URL (optional)" class="w-full rounded-lg border p-3"><input name="github_url" placeholder="GitHub URL (optional)" class="w-full rounded-lg border p-3"><label class="block text-sm font-medium">Upload project files<input type="file" name="files" multiple class="mt-2 block w-full text-sm"></label><label class="flex gap-2"><input type="checkbox" name="use_sample_medbot"> Use sample MedBot project</label></div>
+  <div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><h2 class="font-bold">Audit policies</h2><div class="mt-4 grid gap-3 sm:grid-cols-2">{% for name, label in [('check_ast','Static AST and secrets'),('check_cve','Offline CVE scan'),('check_rag','RAG document sanitizer'),('check_probe','Endpoint prober')] %}<label class="flex gap-2"><input type="checkbox" name="{{ name }}" checked> {{ label }}</label>{% endfor %}</div></div>
+  <button class="rounded-lg bg-[#0F172A] px-5 py-3 font-semibold text-white">Run audit</button>
+</form></div>
+{% endblock %}
