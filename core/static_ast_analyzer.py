@@ -1,0 +1,84 @@
+import ast
+import re
+from pathlib import Path
+
+
+SECRET_PATTERNS = [
+    re.compile(r"\bsk-[A-Za-z0-9_-]{10,}"),
+    re.compile(r"\bghp_[A-Za-z0-9]{10,}"),
+    re.compile(r"\bAIza[A-Za-z0-9_-]{10,}"),
+    re.compile(r"\bAPI_KEY\s*=\s*['\"][^'\"]+['\"]", re.IGNORECASE),
+]
+CONFIG_EXTENSIONS = {".py", ".js", ".ts", ".env", ".json"}
+
+
+def _finding(title, description, path, line, evidence, tag, fix, remediation, severity="HIGH"):
+    return {"category": "AST", "severity": severity, "owasp_tag": tag, "title": title, "description": description,
+            "file_path": str(path), "line_number": line, "evidence_snippet": evidence[:500],
+            "recommended_fix_code": fix, "remediation": remediation}
+
+
+def _python_findings(path, text):
+    findings = []
+    try:
+        tree = ast.parse(text)
+    except SyntaxError as exc:
+        for number, line in enumerate(text.splitlines(), 1):
+            if re.search(r"""['"][^'"]*['"]\s*\+\s*[A-Za-z_][A-Za-z0-9_]*""", line):
+                findings.append(_finding("Unsafe prompt concatenation", "A likely prompt is built through string concatenation in a file with invalid Python syntax.", path, number, line, "LLM01", "prompt = build_prompt(user_input)", "Repair the syntax, then use structured prompt variables and validate user input."))
+        return findings, f"Syntax error in {path.name} at line {exc.lineno or '?'}; used regex fallback."
+
+    lines = text.splitlines()
+    def contains_string(node):
+        return any(isinstance(item, ast.Constant) and isinstance(item.value, str) for item in ast.walk(node))
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+            values = [node.left, node.right]
+            if any(isinstance(value, (ast.Name, ast.Call, ast.Subscript)) for value in values) and any(contains_string(value) for value in values):
+                line = getattr(node, "lineno", 1)
+                findings.append(_finding("Unsafe prompt concatenation", "User-controlled data is concatenated into a prompt.", path, line, lines[line - 1] if lines else "", "LLM01", "prompt = build_prompt(user_input)", "Use structured prompt variables and validate user input."))
+        if isinstance(node, ast.Call):
+            name = ""
+            if isinstance(node.func, ast.Name):
+                name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                name = f"{getattr(node.func.value, 'id', '')}.{node.func.attr}"
+            if name in {"eval", "exec", "os.system", "subprocess.Popen", "pickle.loads"}:
+                line = getattr(node, "lineno", 1)
+                findings.append(_finding("Dangerous dynamic call", f"Use of {name} can execute untrusted content.", path, line, lines[line - 1] if lines else "", "LLM07", "# Avoid executing untrusted input.", "Remove the call or use a safe, allow-listed alternative.", "CRITICAL"))
+    return findings, None
+
+
+def _secret_findings(path, text):
+    findings = []
+    for number, line in enumerate(text.splitlines(), 1):
+        for pattern in SECRET_PATTERNS:
+            if pattern.search(line):
+                findings.append(_finding("Hardcoded secret detected", "A likely credential is stored directly in source or configuration.", path, number, line, "LLM06", "API_KEY = os.environ.get('API_KEY')", "Move secrets to environment variables or a secret manager.", "CRITICAL"))
+                break
+    return findings
+
+
+def run_static_analysis(project_profile):
+    findings, notices = [], []
+    file_values = (
+        project_profile.get("code_files", [])
+        + project_profile.get("dependency_files", [])
+        + project_profile.get("env_files", [])
+    )
+    for file_value in file_values:
+        path = Path(file_value)
+        if path.suffix.lower() not in CONFIG_EXTENSIONS:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if path.suffix.lower() == ".py":
+                python_findings, notice = _python_findings(path, text)
+                findings.extend(python_findings)
+                if notice:
+                    notices.append(notice)
+            findings.extend(_secret_findings(path, text))
+        except (OSError, UnicodeError) as exc:
+            notices.append(f"Could not analyze {path}: {exc}")
+    return {"findings": findings, "notices": notices}
