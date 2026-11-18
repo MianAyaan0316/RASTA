@@ -1,0 +1,39 @@
+{
+  "python": {
+    "langchain": [
+      {"cve_id": "CVE-2023-29374", "affected_versions": "<0.0.200", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older LangChain releases can expose sensitive prompt or tool data."}
+    ],
+    "pypdf": [
+      {"cve_id": "CVE-2023-36464", "affected_versions": "<3.17.0", "severity": "MEDIUM", "owasp_tag": "LLM06", "description": "Older pypdf releases have known denial-of-service handling risks."}
+    ],
+    "flask": [
+      {"cve_id": "CVE-2023-30861", "affected_versions": "<2.3.2", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older Flask releases can mishandle cookie security settings."}
+    ],
+    "requests": [
+      {"cve_id": "CVE-2023-32681", "affected_versions": "<2.31.0", "severity": "MEDIUM", "owasp_tag": "LLM06", "description": "Older Requests releases may leak credentials through proxy handling."}
+    ],
+    "urllib3": [
+      {"cve_id": "CVE-2023-45803", "affected_versions": "<2.0.7", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older urllib3 releases can mishandle redirects and cookies."}
+    ],
+    "pillow": [
+      {"cve_id": "CVE-2023-44271", "affected_versions": "<10.0.1", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older Pillow releases contain image processing vulnerabilities."}
+    ],
+    "transformers": [
+      {"cve_id": "CVE-2024-3568", "affected_versions": "<4.41.0", "severity": "MEDIUM", "owasp_tag": "LLM06", "description": "Older Transformers releases have unsafe model loading concerns."}
+    ]
+  },
+  "npm": {
+    "axios": [
+      {"cve_id": "CVE-2023-45857", "affected_versions": "<1.6.0", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older Axios releases can expose credentials during redirects."}
+    ],
+    "lodash": [
+      {"cve_id": "CVE-2021-23337", "affected_versions": "<4.17.21", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older Lodash releases permit command injection through templates."}
+    ],
+    "express": [
+      {"cve_id": "CVE-2024-29041", "affected_versions": "<4.19.2", "severity": "MEDIUM", "owasp_tag": "LLM06", "description": "Older Express releases have an open redirect issue."}
+    ],
+    "langchain": [
+      {"cve_id": "CVE-2024-3095", "affected_versions": "<0.1.0", "severity": "HIGH", "owasp_tag": "LLM06", "description": "Older npm LangChain releases can mishandle tool inputs."}
+    ]
+  }
+}
