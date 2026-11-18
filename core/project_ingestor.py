@@ -46,6 +46,20 @@ def _record_file(profile, path):
         profile["rag_documents"].append(path_string)
     if path.name == ".env" or path.name.startswith(".env."):
         profile["env_files"].append(path_string)
+    if suffix == ".py":
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if re.search(r"\b(?:from|import)\s+flask\b", text, re.IGNORECASE) and "Flask" not in profile["detected_frameworks"]:
+                profile["detected_frameworks"].append("Flask")
+        except OSError:
+            pass
+    if path.name == "package.json":
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore").lower()
+            if '"express"' in text and "Express" not in profile["detected_frameworks"]:
+                profile["detected_frameworks"].append("Express")
+        except OSError:
+            pass
 
 
 def _walk_and_record(profile, root):
@@ -88,7 +102,8 @@ def ingest_local_files(file_paths_or_dir, workspace_dir):
                 shutil.copytree(source, target, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*IGNORED_DIRECTORIES))
                 _walk_and_record(profile, target)
             elif source.stat().st_size <= MAX_FILE_SIZE:
-                shutil.copy2(source, target)
+                if source.resolve() != target.resolve():
+                    shutil.copy2(source, target)
                 _record_file(profile, target)
             else:
                 profile["skipped_files_count"] += 1

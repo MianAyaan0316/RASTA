@@ -60,6 +60,7 @@ class Finding(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     evidence_snippet = db.Column(db.Text)
+    recommended_fix_code = db.Column(db.Text)
     remediation = db.Column(db.Text)
 
     audit = db.relationship("Audit", back_populates="findings")
