@@ -1,26 +1,17 @@
 # RASTA-SHIELD Roadmap
 
-## Phase 1: Foundation
+## Foundation
 
-**Status: Completed**
+The Flask configuration, SQLite data model, sample healthcare AI project, and core test fixtures are complete.
 
-Phase 1 established the Flask configuration, database foundation, sample vulnerable target,
-PDF test fixture, and initial automated test cases. Later phases will add the security
-scanning engine, AI reasoning workflows, report generation, and web interface.
+## Project Analysis
 
-## Phase 2: Jury-Proof Project Ingestor and Offline Analyzers
+Local uploads and GitHub repositories are ingested safely. Static code, secrets, dependency CVEs, and document injection checks run in an isolated offline workflow.
 
-**Status: Completed**
+## Security Workspace
 
-Phase 2 adds safe local/GitHub project ingestion, offline dependency CVE matching,
-static AST and secret analysis, and RAG document prompt-injection sanitization.
-Malformed files and external inputs produce notices instead of terminating analysis.
+The Enterprise Light dashboard provides scan metrics, security breakdown charts, detailed findings, live AI attack results, and printable reports.
 
-## Phase 3: Functional Web Prototype
+## AI Attack Testing
 
-**Status: Completed - 40% FYP-1 Prototype Milestone**
-
-Phase 3 adds the Flask web application, demo authentication, Enterprise Light dashboard,
-audit workflow, endpoint probing, persistent findings, and end-to-end Phase 3 coverage.
-The next roadmap preview includes the Adaptive Reasoner Loop, RASP Proxy Generator, and
-Split Playground.
+The platform supports prompt injection, system prompt extraction, jailbreak bypass, and unsafe output injection. Live Ollama-compatible endpoints are used when reachable; deterministic offline analysis is used otherwise.

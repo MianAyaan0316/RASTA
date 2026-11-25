@@ -1,6 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-semibold uppercase tracking-wide text-blue-700">Security workspace</p><h1 class="mt-1 text-3xl font-bold">Audit dashboard</h1></div><a href="{{ url_for('web.new_audit') }}" class="rounded-lg bg-[#0F172A] px-5 py-3 font-semibold text-white">New audit</a></div>
-<div class="mt-8 grid gap-4 sm:grid-cols-2"><div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><p class="text-sm text-slate-500">Total audits</p><p class="mt-2 text-3xl font-bold">{{ total_audits }}</p></div><div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><p class="text-sm text-slate-500">Average security score</p><p class="mt-2 text-3xl font-bold">{{ average_score }}/100</p></div></div>
-<div class="mt-8 rounded-xl border border-[#E2E8F0] bg-white p-6"><h2 class="text-lg font-bold">Past audits</h2>{% if audits %}<div class="mt-4 divide-y">{% for audit in audits %}<a href="{{ url_for('web.audit_results', audit_id=audit.id) }}" class="flex items-center justify-between py-4 hover:bg-slate-50"><span><span class="font-semibold">{{ audit.project.name }}</span><span class="ml-3 text-sm text-slate-500">{{ audit.status }}</span></span><span class="font-bold">{{ audit.risk_score }}/100</span></a>{% endfor %}</div>{% else %}<p class="mt-4 text-slate-500">No audits yet. Start with the sample MedBot project.</p>{% endif %}</div>
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div><p class="text-sm font-semibold uppercase tracking-wide text-[#2563EB]">Security workspace</p><h1 class="mt-1 text-3xl font-bold">Audit dashboard</h1></div>
+  <a href="{{ url_for('web.new_audit') }}" class="rounded-lg bg-[#2563EB] px-5 py-3 font-semibold text-white">New Security Scan</a>
+</div>
+<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><p class="text-sm text-slate-500">Total Scans</p><p class="mt-2 text-3xl font-bold">{{ total_audits }}</p></div>
+  <div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><p class="text-sm text-slate-500">Average Security Score</p><p class="mt-2 text-3xl font-bold">{{ average_score }}<span class="text-base text-slate-400">/100</span></p></div>
+  <div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><p class="text-sm text-slate-500">Code &amp; Library Issues</p><p class="mt-2 text-3xl font-bold">{{ code_library_issues }}</p></div>
+  <div class="rounded-xl border border-[#E2E8F0] bg-white p-6"><p class="text-sm text-slate-500">Attacks: Blocked vs Breached</p><p class="mt-2 text-2xl font-bold"><span class="text-[#16A34A]">{{ blocked_attacks }}</span> / <span class="text-[#DC2626]">{{ breached_attacks }}</span></p></div>
+</div>
+<div class="mt-6 rounded-xl border border-[#E2E8F0] bg-white p-6">
+  <h2 class="text-lg font-bold">Security Breakdown</h2>
+  <canvas id="securityBreakdown" class="mt-4 max-h-72"></canvas>
+</div>
+<div class="mt-6 overflow-hidden rounded-xl border border-[#E2E8F0] bg-white">
+  <div class="border-b border-[#E2E8F0] px-6 py-4"><h2 class="text-lg font-bold">Recent Security Scans</h2></div>
+  {% if audits %}
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-500"><tr><th class="px-6 py-3">Project</th><th class="px-6 py-3">Status</th><th class="px-6 py-3">Security Score</th><th class="px-6 py-3">Date</th><th class="px-6 py-3">Actions</th></tr></thead><tbody>
+  {% for audit in audits %}<tr class="border-t border-[#E2E8F0]"><td class="px-6 py-4 font-semibold">{{ audit.project.name }}</td><td class="px-6 py-4"><span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-[#16A34A]">{{ audit.status|capitalize }}</span></td><td class="px-6 py-4 font-bold">{{ audit.risk_score }}/100</td><td class="px-6 py-4 text-slate-500">{{ audit.created_at.strftime('%Y-%m-%d') }}</td><td class="px-6 py-4"><a class="font-semibold text-[#2563EB]" href="{{ url_for('web.audit_results', audit_id=audit.id) }}">View Results</a><span class="mx-2 text-slate-300">|</span><a class="font-semibold text-slate-700" href="{{ url_for('web.audit_report', audit_id=audit.id) }}">Download Report</a></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="p-6 text-slate-500">No security scans yet. Create a scan to establish your baseline.</p>{% endif %}
+</div>
+<script>
+new Chart(document.getElementById('securityBreakdown'), {type:'bar', data:{labels:['Blocked','Breached','Code Issues','Codebase Score'], datasets:[{label:'Security metrics',data:[{{ blocked_attacks }},{{ breached_attacks }},{{ code_library_issues }},{{ average_score }}],backgroundColor:['#16A34A','#DC2626','#2563EB','#94A3B8']}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+</script>
 {% endblock %}

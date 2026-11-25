@@ -1,14 +1,68 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="mx-auto max-w-md rounded-xl border border-[#E2E8F0] bg-white p-8 shadow-sm">
-  <h1 class="text-2xl font-bold">{{ "Create account" if register_mode else "Welcome back" }}</h1>
-  <p class="mt-2 text-sm text-slate-500">Jury-proof security analysis for AI projects.</p>
-  <form method="post" class="mt-6 space-y-4">
-    {% if register_mode %}<input name="username" placeholder="Username" class="w-full rounded-lg border p-3" required>{% endif %}
-    <input name="email" type="email" placeholder="Email" class="w-full rounded-lg border p-3" required>
-    <input name="password" type="password" placeholder="Password" class="w-full rounded-lg border p-3" required>
-    <button class="w-full rounded-lg bg-[#0F172A] px-4 py-3 font-semibold text-white">{{ "Register" if register_mode else "Login" }}</button>
-  </form>
-  {% if not register_mode %}<a href="{{ url_for('auth.demo_login') }}" class="mt-4 block text-center text-sm font-medium text-blue-700">Use Demo Login</a>{% endif %}
+<div class="mx-auto grid min-h-[70vh] max-w-5xl overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm lg:grid-cols-2">
+  <section class="bg-slate-900 p-10 text-white lg:p-14">
+    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">Security for AI applications</p>
+    <h1 class="mt-5 text-4xl font-bold leading-tight">Test AI systems before attackers test them.</h1>
+    <p class="mt-5 max-w-md text-lg leading-8 text-slate-300">RASTA-SHIELD combines code analysis, dependency checks, document inspection, and live AI attack testing in one security workspace.</p>
+  </section>
+  <section class="flex items-center p-8 lg:p-12">
+    <div class="w-full">
+      <div class="mb-6 grid grid-cols-2 rounded-lg bg-slate-100 p-1" role="group" aria-label="Account options">
+        <button type="button" data-auth-mode="login" aria-pressed="{{ 'false' if register_mode else 'true' }}" class="rounded-md px-3 py-2 text-sm font-semibold {{ 'text-slate-600' if register_mode else 'bg-white text-[#2563EB] shadow-sm' }}">Sign In</button>
+        <button type="button" data-auth-mode="register" aria-pressed="{{ 'true' if register_mode else 'false' }}" class="rounded-md px-3 py-2 text-sm font-semibold {{ 'bg-white text-[#2563EB] shadow-sm' if register_mode else 'text-slate-600' }}">Create Account</button>
+      </div>
+      <h2 id="auth-heading" class="text-2xl font-bold">{{ "Create account" if register_mode else "Welcome back" }}</h2>
+      <p id="auth-description" class="mt-2 text-sm text-slate-500">{{ "Create an account to start using your security workspace." if register_mode else "Sign in to your security workspace." }}</p>
+      <form id="auth-form" method="post" action="{{ url_for('auth.signup') if register_mode else url_for('auth.login') }}" data-login-action="{{ url_for('auth.login') }}" data-signup-action="{{ url_for('auth.signup') }}" class="mt-6 space-y-4">
+        <div id="name-field" {{ 'hidden' if not register_mode }}>
+          <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+          <input id="name" name="name" value="{{ name|default('') }}" autocomplete="name" maxlength="80" placeholder="Your name" class="w-full rounded-lg border border-[#E2E8F0] p-3" {{ 'required' if register_mode }} {{ '' if register_mode else 'disabled' }}>
+        </div>
+        <div>
+          <label for="email" class="mb-1 block text-sm font-medium text-slate-700">Email</label>
+          <input id="email" name="email" type="email" value="{{ email|default('') }}" autocomplete="email" maxlength="120" placeholder="you@example.com" class="w-full rounded-lg border border-[#E2E8F0] p-3" required>
+        </div>
+        <div>
+          <label for="password" class="mb-1 block text-sm font-medium text-slate-700">Password</label>
+          <input id="password" name="password" type="password" autocomplete="{{ 'new-password' if register_mode else 'current-password' }}" placeholder="Password" class="w-full rounded-lg border border-[#E2E8F0] p-3" required>
+        </div>
+        <button id="auth-submit" class="w-full rounded-lg bg-[#2563EB] px-4 py-3 font-semibold text-white">{{ "Create Account" if register_mode else "Sign In" }}</button>
+      </form>
+      {% if not register_mode %}<a href="{{ url_for('auth.demo_login') }}" class="mt-4 block w-full rounded-lg border border-[#E2E8F0] px-4 py-3 text-center text-sm font-semibold text-[#2563EB]">Quick Workspace Access</a>{% endif %}
+    </div>
+  </section>
 </div>
+<script>
+  document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const creatingAccount = button.dataset.authMode === "register";
+      const nameField = document.getElementById("name-field");
+      const nameInput = document.getElementById("name");
+      const form = document.getElementById("auth-form");
+      const submitButton = document.getElementById("auth-submit");
+      const heading = document.getElementById("auth-heading");
+      const description = document.getElementById("auth-description");
+
+      nameField.hidden = !creatingAccount;
+      nameInput.disabled = !creatingAccount;
+      nameInput.required = creatingAccount;
+      form.action = creatingAccount ? form.dataset.signupAction : form.dataset.loginAction;
+      submitButton.textContent = creatingAccount ? "Create Account" : "Sign In";
+      heading.textContent = creatingAccount ? "Create account" : "Welcome back";
+      description.textContent = creatingAccount
+        ? "Create an account to start using your security workspace."
+        : "Sign in to your security workspace.";
+      document.querySelectorAll("[data-auth-mode]").forEach((tab) => {
+        const selected = tab === button;
+        tab.setAttribute("aria-pressed", String(selected));
+        tab.classList.toggle("bg-white", selected);
+        tab.classList.toggle("text-[#2563EB]", selected);
+        tab.classList.toggle("shadow-sm", selected);
+        tab.classList.toggle("text-slate-600", !selected);
+      });
+      document.getElementById("password").autocomplete = creatingAccount ? "new-password" : "current-password";
+    });
+  });
+</script>
 {% endblock %}

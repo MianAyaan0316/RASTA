@@ -82,3 +82,76 @@ def run_static_analysis(project_profile):
         except (OSError, UnicodeError) as exc:
             notices.append(f"Could not analyze {path}: {exc}")
     return {"findings": findings, "notices": notices}
+
+
+def analyze_attack_surface(profile):
+    """Identify input entry points, AI connections, and unvalidated input-to-prompt flows."""
+    entry_points = set()
+    ai_connections = set()
+    flows = []
+    prompt_context = []
+
+    text_by_path = {}
+    for file_value in (
+        profile.get("code_files", [])
+        + profile.get("dependency_files", [])
+        + profile.get("env_files", [])
+    ):
+        path = Path(file_value)
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            text_by_path[str(path)] = text
+        except (OSError, UnicodeError):
+            continue
+
+    input_patterns = {
+        "Python input()": re.compile(r"\binput\s*\("),
+        "Flask request.form": re.compile(r"\brequest\.form\b"),
+        "Flask request.json": re.compile(r"\brequest\.json\b"),
+        "Flask request.args": re.compile(r"\brequest\.args\b"),
+    }
+    ai_patterns = {
+        "OpenAI": re.compile(r"\b(?:openai|OpenAI)\b"),
+        "Ollama": re.compile(r"\b(?:ollama|/api/generate|/api/chat)\b", re.I),
+        "LangChain": re.compile(r"\b(?:langchain|LangChain)\b"),
+        "ChromaDB": re.compile(r"\b(?:chromadb|Chroma)\b"),
+        "FAISS": re.compile(r"\b(?:faiss|FAISS)\b"),
+    }
+
+    for path, text in text_by_path.items():
+        for label, pattern in input_patterns.items():
+            if pattern.search(text):
+                entry_points.add(label)
+        for label, pattern in ai_patterns.items():
+            if pattern.search(text):
+                ai_connections.add(label)
+
+        prompt_lines = [
+            line for line in text.splitlines()
+            if re.search(r"\b(prompt|messages|query)\b", line, re.I)
+        ]
+        has_input = any(pattern.search(text) for pattern in input_patterns.values())
+        has_ai = any(pattern.search(text) for pattern in ai_patterns.values())
+        has_concat = bool(re.search(r"(prompt_sent|prompt)\s*=.*(?:\+|format\(|f[\"'])", text))
+        if has_input and (has_ai or has_concat):
+            flows.append({
+                "source": next((label for label, pattern in input_patterns.items() if pattern.search(text)), "User input"),
+                "flow": "User input -> AI prompt",
+                "target": next((label for label, pattern in ai_patterns.items() if pattern.search(text)), "Prompt builder"),
+                "validated": not has_concat,
+                "file_path": path,
+            })
+        if prompt_lines:
+            prompt_context.append({"file_path": path, "lines": prompt_lines[:5]})
+
+    return {
+        "user_input_entry_points": sorted(entry_points),
+        "ai_connections": sorted(ai_connections),
+        "unvalidated_data_flows": flows,
+        "prompt_context": prompt_context,
+        "summary": {
+            "entry_point_count": len(entry_points),
+            "ai_connection_count": len(ai_connections),
+            "unvalidated_flow_count": sum(1 for flow in flows if not flow["validated"]),
+        },
+    }

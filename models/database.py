@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash
 
 
 db = SQLAlchemy()
@@ -16,6 +17,9 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     projects = db.relationship("Project", back_populates="user", cascade="all, delete-orphan")
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
 
 
 class Project(db.Model):
@@ -42,6 +46,7 @@ class Audit(db.Model):
     risk_score = db.Column(db.Integer, default=0)
     model_detected = db.Column(db.String(120))
     latency_ms = db.Column(db.Integer)
+    attack_surface_json = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     project = db.relationship("Project", back_populates="audits")
@@ -62,6 +67,8 @@ class Finding(db.Model):
     evidence_snippet = db.Column(db.Text)
     recommended_fix_code = db.Column(db.Text)
     remediation = db.Column(db.Text)
+    file_path = db.Column(db.String(500))
+    line_number = db.Column(db.Integer)
 
     audit = db.relationship("Audit", back_populates="findings")
 
@@ -77,5 +84,10 @@ class AttackLog(db.Model):
     response_received = db.Column(db.Text)
     verdict = db.Column(db.String(50))
     verification_layer = db.Column(db.String(50))
+    attack_name = db.Column(db.String(120))
+    category = db.Column(db.String(50))
+    latency_ms = db.Column(db.Integer)
+    remediation = db.Column(db.Text)
+    ai_response = db.Column(db.Text)
 
     audit = db.relationship("Audit", back_populates="attack_logs")
